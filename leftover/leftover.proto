@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./leftover";
+
+service LeftoverService {
+   rpc AddLeftover (LeftoverRequest) returns (google.protobuf.Empty) {}
+   rpc GetLeftover (LeftoverIdentity) returns (Leftover) {} 
+   rpc GetLeftovers (LeftoverRequest) returns (LeftoverResponse) {}
+   rpc UpdateLeftover (Leftover) returns (google.protobuf.Empty) {}
+   rpc DeleteLeftover (LeftoverIdentity) returns (google.protobuf.Empty) {}
+}
+
+message Leftover {
+   string id = 1;
+   string name = 2;
+   string description = 3;
+   string image = 4;
+   float longitude = 5;
+   float latitude = 6; 
+}
+
+message LeftoverRequest {
+   string name = 1;
+   string description = 2;
+   string image = 3;
+   float longitude = 4;
+   float latitude = 5;
+}
+
+message LeftoverResponse {
+   repeated Leftover items = 1;
+}
+
+message LeftoverIdentity {
+   string id = 1;
+}
+
+message LeftoverQuery {
+   string id = 1;
+   string name = 2;
+}
