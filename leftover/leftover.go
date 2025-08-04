@@ -20,6 +20,7 @@ type DatabaseInterface interface {
 
 type LeftoverModel struct {
 	ID          uuid.UUID `db:"id"`
+	OwnerID     uuid.UUID `db:"owner_id"`
 	Name        string    `db:"name"`
 	Description string    `db:"description"`
 	Image       string    `db:"image"`
@@ -44,10 +45,10 @@ func (s *LeftoverServer) AddLeftover(ctx context.Context, req *LeftoverRequest) 
 	id := uuid.New()
 
 	query := `
-		INSERT INTO leftovers (id, name, description, image, longitude, latitude) 
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO leftover (id, owner_id, name, description, image, longitude, latitude) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
-	_, err := s.db.Exec(ctx, query, id, req.Name, req.Description, req.Image, req.Longitude, req.Latitude)
+	_, err := s.db.Exec(ctx, query, id, req.OwnerId, req.Name, req.Description, req.Image, req.Longitude, req.Latitude)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to add leftover: %v", err)
 	}
@@ -57,13 +58,13 @@ func (s *LeftoverServer) AddLeftover(ctx context.Context, req *LeftoverRequest) 
 
 func (s *LeftoverServer) GetLeftover(ctx context.Context, req *LeftoverIdentity) (*Leftover, error) {
 	query := `
-		SELECT id, name, description, image, longitude, latitude 
-		FROM leftovers 
+		SELECT id, owner_id, name, description, image, longitude, latitude 
+		FROM leftover 
 		WHERE id = $1
 	`
 	row := s.db.QueryRow(ctx, query, req.Id)
 	var lo LeftoverModel
-	err := row.Scan(&lo.ID, &lo.Name, &lo.Description, &lo.Image, &lo.Longitude, &lo.Latitude)
+	err := row.Scan(&lo.ID, &lo.OwnerID, &lo.Name, &lo.Description, &lo.Image, &lo.Longitude, &lo.Latitude)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			return nil, status.Errorf(codes.NotFound, "leftover not found")
@@ -73,6 +74,7 @@ func (s *LeftoverServer) GetLeftover(ctx context.Context, req *LeftoverIdentity)
 
 	return &Leftover{
 		Id:          lo.ID.String(),
+		OwnerId:     lo.OwnerID.String(),
 		Name:        lo.Name,
 		Description: lo.Description,
 		Image:       lo.Image,
@@ -85,8 +87,8 @@ func (s *LeftoverServer) GetLeftovers(ctx context.Context, req *LeftoverRequest)
 	items := make([]*Leftover, 0)
 
 	query := `
-		SELECT id, name, description, image, longitude, latitude 
-		FROM leftovers
+		SELECT id, owner_id, name, description, image, longitude, latitude 
+		FROM leftover
 		WHERE name = $1
 	`
 	rows, err := s.db.Query(ctx, query, req.Name)
@@ -97,12 +99,13 @@ func (s *LeftoverServer) GetLeftovers(ctx context.Context, req *LeftoverRequest)
 
 	for rows.Next() {
 		var lo LeftoverModel
-		err := rows.Scan(&lo.ID, &lo.Name, &lo.Description, &lo.Image, &lo.Longitude, &lo.Latitude)
+		err := rows.Scan(&lo.ID, &lo.OwnerID, &lo.Name, &lo.Description, &lo.Image, &lo.Longitude, &lo.Latitude)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to scan leftover: %v", err)
 		}
 		items = append(items, &Leftover{
 			Id:          lo.ID.String(),
+			OwnerId:     lo.OwnerID.String(),
 			Name:        lo.Name,
 			Description: lo.Description,
 			Image:       lo.Image,
@@ -118,16 +121,16 @@ func (s *LeftoverServer) GetLeftovers(ctx context.Context, req *LeftoverRequest)
 }
 
 func (s *LeftoverServer) UpdateLeftover(ctx context.Context, req *Leftover) (*emptypb.Empty, error) {
-	query := `UPDATE leftovers 
-		SET name = $1, description = $2, image = $3, longitude = $4, latitude = $5 
-		WHERE id = $6
+	query := `UPDATE leftover 
+		SET owner_id = $1, name = $2, description = $3, image = $4, longitude = $5, latitude = $6 
+		WHERE id = $7
 	`
 
 	uid, err := uuid.Parse(req.Id)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid UUID format: %v", err)
 	}
-	_, err = s.db.Exec(ctx, query, req.Name, req.Description, req.Image, req.Longitude, req.Latitude, uid)
+	_, err = s.db.Exec(ctx, query, req.OwnerId, req.Name, req.Description, req.Image, req.Longitude, req.Latitude, uid)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update leftover: %v", err)
 	}
@@ -135,12 +138,12 @@ func (s *LeftoverServer) UpdateLeftover(ctx context.Context, req *Leftover) (*em
 	return &emptypb.Empty{}, nil
 }
 
-func (s *LeftoverServer) DeleteLeftover(ctx context.Context, req *LeftoverIdentity) (*emptypb.Empty, error) {
+func (s *LeftoverServer) DeleteLeftover(ctx context.Context, req *DeleteRequest) (*emptypb.Empty, error) {
 	query := `
-		DELETE FROM leftovers 
-		WHERE id = $1
+		DELETE FROM leftover 
+		WHERE id = $1 AND owner_id = $2
 	`
-	_, err := s.db.Exec(ctx, query, req.Id)
+	_, err := s.db.Exec(ctx, query, req.Id, req.OwnerId)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete leftover: %v", err)
 	}

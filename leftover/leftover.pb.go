@@ -25,11 +25,12 @@ const (
 type Leftover struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Image         string                 `protobuf:"bytes,4,opt,name=image,proto3" json:"image,omitempty"`
-	Longitude     float32                `protobuf:"fixed32,5,opt,name=longitude,proto3" json:"longitude,omitempty"`
-	Latitude      float32                `protobuf:"fixed32,6,opt,name=latitude,proto3" json:"latitude,omitempty"`
+	OwnerId       string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Image         string                 `protobuf:"bytes,5,opt,name=image,proto3" json:"image,omitempty"`
+	Longitude     float32                `protobuf:"fixed32,6,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	Latitude      float32                `protobuf:"fixed32,7,opt,name=latitude,proto3" json:"latitude,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -71,6 +72,13 @@ func (x *Leftover) GetId() string {
 	return ""
 }
 
+func (x *Leftover) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
+}
+
 func (x *Leftover) GetName() string {
 	if x != nil {
 		return x.Name
@@ -108,11 +116,12 @@ func (x *Leftover) GetLatitude() float32 {
 
 type LeftoverRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	Image         string                 `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
-	Longitude     float32                `protobuf:"fixed32,4,opt,name=longitude,proto3" json:"longitude,omitempty"`
-	Latitude      float32                `protobuf:"fixed32,5,opt,name=latitude,proto3" json:"latitude,omitempty"`
+	OwnerId       string                 `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Image         string                 `protobuf:"bytes,4,opt,name=image,proto3" json:"image,omitempty"`
+	Longitude     float32                `protobuf:"fixed32,5,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	Latitude      float32                `protobuf:"fixed32,6,opt,name=latitude,proto3" json:"latitude,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -145,6 +154,13 @@ func (x *LeftoverRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use LeftoverRequest.ProtoReflect.Descriptor instead.
 func (*LeftoverRequest) Descriptor() ([]byte, []int) {
 	return file_leftover_leftover_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *LeftoverRequest) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
 }
 
 func (x *LeftoverRequest) GetName() string {
@@ -270,17 +286,70 @@ func (x *LeftoverIdentity) GetId() string {
 	return ""
 }
 
+type DeleteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	OwnerId       string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteRequest) Reset() {
+	*x = DeleteRequest{}
+	mi := &file_leftover_leftover_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteRequest) ProtoMessage() {}
+
+func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_leftover_leftover_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteRequest.ProtoReflect.Descriptor instead.
+func (*DeleteRequest) Descriptor() ([]byte, []int) {
+	return file_leftover_leftover_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *DeleteRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *DeleteRequest) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
+}
+
 type LeftoverQuery struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	OwnerId       string                 `protobuf:"bytes,3,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LeftoverQuery) Reset() {
 	*x = LeftoverQuery{}
-	mi := &file_leftover_leftover_proto_msgTypes[4]
+	mi := &file_leftover_leftover_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -292,7 +361,7 @@ func (x *LeftoverQuery) String() string {
 func (*LeftoverQuery) ProtoMessage() {}
 
 func (x *LeftoverQuery) ProtoReflect() protoreflect.Message {
-	mi := &file_leftover_leftover_proto_msgTypes[4]
+	mi := &file_leftover_leftover_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -305,7 +374,7 @@ func (x *LeftoverQuery) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeftoverQuery.ProtoReflect.Descriptor instead.
 func (*LeftoverQuery) Descriptor() ([]byte, []int) {
-	return file_leftover_leftover_proto_rawDescGZIP(), []int{4}
+	return file_leftover_leftover_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *LeftoverQuery) GetId() string {
@@ -322,37 +391,50 @@ func (x *LeftoverQuery) GetName() string {
 	return ""
 }
 
+func (x *LeftoverQuery) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
+}
+
 var File_leftover_leftover_proto protoreflect.FileDescriptor
 
 const file_leftover_leftover_proto_rawDesc = "" +
 	"\n" +
-	"\x17leftover/leftover.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xa0\x01\n" +
+	"\x17leftover/leftover.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xbb\x01\n" +
 	"\bLeftover\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x14\n" +
+	"\x05image\x18\x05 \x01(\tR\x05image\x12\x1c\n" +
+	"\tlongitude\x18\x06 \x01(\x02R\tlongitude\x12\x1a\n" +
+	"\blatitude\x18\a \x01(\x02R\blatitude\"\xb2\x01\n" +
+	"\x0fLeftoverRequest\x12\x19\n" +
+	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x14\n" +
 	"\x05image\x18\x04 \x01(\tR\x05image\x12\x1c\n" +
 	"\tlongitude\x18\x05 \x01(\x02R\tlongitude\x12\x1a\n" +
-	"\blatitude\x18\x06 \x01(\x02R\blatitude\"\x97\x01\n" +
-	"\x0fLeftoverRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x14\n" +
-	"\x05image\x18\x03 \x01(\tR\x05image\x12\x1c\n" +
-	"\tlongitude\x18\x04 \x01(\x02R\tlongitude\x12\x1a\n" +
-	"\blatitude\x18\x05 \x01(\x02R\blatitude\"3\n" +
+	"\blatitude\x18\x06 \x01(\x02R\blatitude\"3\n" +
 	"\x10LeftoverResponse\x12\x1f\n" +
 	"\x05items\x18\x01 \x03(\v2\t.LeftoverR\x05items\"\"\n" +
 	"\x10LeftoverIdentity\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"3\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\":\n" +
+	"\rDeleteRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\tR\aownerId\"N\n" +
 	"\rLeftoverQuery\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name2\xa8\x02\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
+	"\bowner_id\x18\x03 \x01(\tR\aownerId2\xa5\x02\n" +
 	"\x0fLeftoverService\x129\n" +
 	"\vAddLeftover\x12\x10.LeftoverRequest\x1a\x16.google.protobuf.Empty\"\x00\x12-\n" +
 	"\vGetLeftover\x12\x11.LeftoverIdentity\x1a\t.Leftover\"\x00\x125\n" +
 	"\fGetLeftovers\x12\x10.LeftoverRequest\x1a\x11.LeftoverResponse\"\x00\x125\n" +
-	"\x0eUpdateLeftover\x12\t.Leftover\x1a\x16.google.protobuf.Empty\"\x00\x12=\n" +
-	"\x0eDeleteLeftover\x12\x11.LeftoverIdentity\x1a\x16.google.protobuf.Empty\"\x00B\fZ\n" +
+	"\x0eUpdateLeftover\x12\t.Leftover\x1a\x16.google.protobuf.Empty\"\x00\x12:\n" +
+	"\x0eDeleteLeftover\x12\x0e.DeleteRequest\x1a\x16.google.protobuf.Empty\"\x00B\fZ\n" +
 	"./leftoverb\x06proto3"
 
 var (
@@ -367,14 +449,15 @@ func file_leftover_leftover_proto_rawDescGZIP() []byte {
 	return file_leftover_leftover_proto_rawDescData
 }
 
-var file_leftover_leftover_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_leftover_leftover_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_leftover_leftover_proto_goTypes = []any{
 	(*Leftover)(nil),         // 0: Leftover
 	(*LeftoverRequest)(nil),  // 1: LeftoverRequest
 	(*LeftoverResponse)(nil), // 2: LeftoverResponse
 	(*LeftoverIdentity)(nil), // 3: LeftoverIdentity
-	(*LeftoverQuery)(nil),    // 4: LeftoverQuery
-	(*empty.Empty)(nil),      // 5: google.protobuf.Empty
+	(*DeleteRequest)(nil),    // 4: DeleteRequest
+	(*LeftoverQuery)(nil),    // 5: LeftoverQuery
+	(*empty.Empty)(nil),      // 6: google.protobuf.Empty
 }
 var file_leftover_leftover_proto_depIdxs = []int32{
 	0, // 0: LeftoverResponse.items:type_name -> Leftover
@@ -382,12 +465,12 @@ var file_leftover_leftover_proto_depIdxs = []int32{
 	3, // 2: LeftoverService.GetLeftover:input_type -> LeftoverIdentity
 	1, // 3: LeftoverService.GetLeftovers:input_type -> LeftoverRequest
 	0, // 4: LeftoverService.UpdateLeftover:input_type -> Leftover
-	3, // 5: LeftoverService.DeleteLeftover:input_type -> LeftoverIdentity
-	5, // 6: LeftoverService.AddLeftover:output_type -> google.protobuf.Empty
+	4, // 5: LeftoverService.DeleteLeftover:input_type -> DeleteRequest
+	6, // 6: LeftoverService.AddLeftover:output_type -> google.protobuf.Empty
 	0, // 7: LeftoverService.GetLeftover:output_type -> Leftover
 	2, // 8: LeftoverService.GetLeftovers:output_type -> LeftoverResponse
-	5, // 9: LeftoverService.UpdateLeftover:output_type -> google.protobuf.Empty
-	5, // 10: LeftoverService.DeleteLeftover:output_type -> google.protobuf.Empty
+	6, // 9: LeftoverService.UpdateLeftover:output_type -> google.protobuf.Empty
+	6, // 10: LeftoverService.DeleteLeftover:output_type -> google.protobuf.Empty
 	6, // [6:11] is the sub-list for method output_type
 	1, // [1:6] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -406,7 +489,7 @@ func file_leftover_leftover_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_leftover_leftover_proto_rawDesc), len(file_leftover_leftover_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

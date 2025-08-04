@@ -35,7 +35,7 @@ type LeftoverServiceClient interface {
 	GetLeftover(ctx context.Context, in *LeftoverIdentity, opts ...grpc.CallOption) (*Leftover, error)
 	GetLeftovers(ctx context.Context, in *LeftoverRequest, opts ...grpc.CallOption) (*LeftoverResponse, error)
 	UpdateLeftover(ctx context.Context, in *Leftover, opts ...grpc.CallOption) (*empty.Empty, error)
-	DeleteLeftover(ctx context.Context, in *LeftoverIdentity, opts ...grpc.CallOption) (*empty.Empty, error)
+	DeleteLeftover(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type leftoverServiceClient struct {
@@ -86,7 +86,7 @@ func (c *leftoverServiceClient) UpdateLeftover(ctx context.Context, in *Leftover
 	return out, nil
 }
 
-func (c *leftoverServiceClient) DeleteLeftover(ctx context.Context, in *LeftoverIdentity, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *leftoverServiceClient) DeleteLeftover(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, LeftoverService_DeleteLeftover_FullMethodName, in, out, cOpts...)
@@ -104,7 +104,7 @@ type LeftoverServiceServer interface {
 	GetLeftover(context.Context, *LeftoverIdentity) (*Leftover, error)
 	GetLeftovers(context.Context, *LeftoverRequest) (*LeftoverResponse, error)
 	UpdateLeftover(context.Context, *Leftover) (*empty.Empty, error)
-	DeleteLeftover(context.Context, *LeftoverIdentity) (*empty.Empty, error)
+	DeleteLeftover(context.Context, *DeleteRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedLeftoverServiceServer()
 }
 
@@ -127,7 +127,7 @@ func (UnimplementedLeftoverServiceServer) GetLeftovers(context.Context, *Leftove
 func (UnimplementedLeftoverServiceServer) UpdateLeftover(context.Context, *Leftover) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateLeftover not implemented")
 }
-func (UnimplementedLeftoverServiceServer) DeleteLeftover(context.Context, *LeftoverIdentity) (*empty.Empty, error) {
+func (UnimplementedLeftoverServiceServer) DeleteLeftover(context.Context, *DeleteRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteLeftover not implemented")
 }
 func (UnimplementedLeftoverServiceServer) mustEmbedUnimplementedLeftoverServiceServer() {}
@@ -224,7 +224,7 @@ func _LeftoverService_UpdateLeftover_Handler(srv interface{}, ctx context.Contex
 }
 
 func _LeftoverService_DeleteLeftover_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LeftoverIdentity)
+	in := new(DeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func _LeftoverService_DeleteLeftover_Handler(srv interface{}, ctx context.Contex
 		FullMethod: LeftoverService_DeleteLeftover_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LeftoverServiceServer).DeleteLeftover(ctx, req.(*LeftoverIdentity))
+		return srv.(LeftoverServiceServer).DeleteLeftover(ctx, req.(*DeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -1,4 +1,4 @@
-module xvco
+module lovco
 
 go 1.24.5
 

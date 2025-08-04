@@ -9,24 +9,26 @@ service LeftoverService {
    rpc GetLeftover (LeftoverIdentity) returns (Leftover) {} 
    rpc GetLeftovers (LeftoverRequest) returns (LeftoverResponse) {}
    rpc UpdateLeftover (Leftover) returns (google.protobuf.Empty) {}
-   rpc DeleteLeftover (LeftoverIdentity) returns (google.protobuf.Empty) {}
+   rpc DeleteLeftover (DeleteRequest) returns (google.protobuf.Empty) {}
 }
 
 message Leftover {
    string id = 1;
+   string owner_id = 2;
+   string name = 3;
+   string description = 4;
+   string image = 5;
+   float longitude = 6;
+   float latitude = 7; 
+}
+
+message LeftoverRequest {
+   string owner_id = 1;
    string name = 2;
    string description = 3;
    string image = 4;
    float longitude = 5;
-   float latitude = 6; 
-}
-
-message LeftoverRequest {
-   string name = 1;
-   string description = 2;
-   string image = 3;
-   float longitude = 4;
-   float latitude = 5;
+   float latitude = 6;
 }
 
 message LeftoverResponse {
@@ -37,7 +39,13 @@ message LeftoverIdentity {
    string id = 1;
 }
 
+message DeleteRequest {
+   string id = 1;
+   string owner_id = 2;
+}
+
 message LeftoverQuery {
    string id = 1;
    string name = 2;
+   string owner_id = 3;
 }

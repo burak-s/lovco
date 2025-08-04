@@ -1,7 +1,46 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
 option go_package = "./chat";
 
-service chat {
-   
+service ChatService {
+   // Enters chats sees messages
+   rpc JoinChat(JoinChatRequest) returns (stream ChatMessage) {}
+
+   // Sends message keep seeing messages lively
+   rpc SendMessage(ChatMessageRequest) returns (google.protobuf.Empty) {}
+
+   // When enter chat to set message as seen.
+   // rpc MarkMessagesAsSeen(JoinChatRequest) returns (google.protobuf.Empty) {}
+
+   // To close chat session for user. if user owns leftover it deletes messages.
+   rpc EndChatSession(EndChatRequest) returns (google.protobuf.Empty) {}
+}
+
+message ChatMessage {
+   string id = 1;
+   string leftover_id = 2;
+   string user_id = 3;
+   optional string message = 4;
+   optional string image = 5;
+   google.protobuf.Timestamp created_at = 6;
+}
+
+message ChatMessageRequest {
+   string leftover_id = 1;
+   string user_id = 2;
+   optional string message = 3;
+   optional string image = 4;
+}
+
+message EndChatRequest {
+   string leftover_id = 1;
+   string user_id = 2;
+}
+
+message JoinChatRequest {
+   string leftover_id = 1;
+   string user_id = 2;
 }
