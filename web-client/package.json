@@ -1,0 +1,26 @@
+{
+  "name": "rsbuild-svelte-js",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rsbuild build",
+    "dev": "rsbuild dev --open",
+    "preview": "rsbuild preview"
+  },
+  "dependencies": {
+    "@biomejs/biome": "^2.1.4",
+    "@tailwindcss/postcss": "^4.1.11",
+    "google-protobuf": "^3.21.4",
+    "grpc-web": "^1.5.0",
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.1.1",
+    "svelte": "^5.37.3",
+    "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^1.4.13",
+    "@rsbuild/plugin-svelte": "^1.0.10",
+    "grpc-tools": "^1.13.0"
+  }
+}
