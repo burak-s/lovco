@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	ChatService_JoinChat_FullMethodName       = "/ChatService/JoinChat"
+	ChatService_WatchChatQueue_FullMethodName = "/ChatService/WatchChatQueue"
 	ChatService_SendMessage_FullMethodName    = "/ChatService/SendMessage"
 	ChatService_EndChatSession_FullMethodName = "/ChatService/EndChatSession"
 )
@@ -31,6 +32,8 @@ const (
 type ChatServiceClient interface {
 	// Enters chats sees messages
 	JoinChat(ctx context.Context, in *JoinChatRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ChatMessage], error)
+	// See queue
+	WatchChatQueue(ctx context.Context, in *JoinChatRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QueueResponse], error)
 	// Sends message keep seeing messages lively
 	SendMessage(ctx context.Context, in *ChatMessageRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// To close chat session for user. if user owns leftover it deletes messages.
@@ -64,6 +67,25 @@ func (c *chatServiceClient) JoinChat(ctx context.Context, in *JoinChatRequest, o
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ChatService_JoinChatClient = grpc.ServerStreamingClient[ChatMessage]
 
+func (c *chatServiceClient) WatchChatQueue(ctx context.Context, in *JoinChatRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QueueResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ChatService_ServiceDesc.Streams[1], ChatService_WatchChatQueue_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[JoinChatRequest, QueueResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ChatService_WatchChatQueueClient = grpc.ServerStreamingClient[QueueResponse]
+
 func (c *chatServiceClient) SendMessage(ctx context.Context, in *ChatMessageRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(empty.Empty)
@@ -90,6 +112,8 @@ func (c *chatServiceClient) EndChatSession(ctx context.Context, in *EndChatReque
 type ChatServiceServer interface {
 	// Enters chats sees messages
 	JoinChat(*JoinChatRequest, grpc.ServerStreamingServer[ChatMessage]) error
+	// See queue
+	WatchChatQueue(*JoinChatRequest, grpc.ServerStreamingServer[QueueResponse]) error
 	// Sends message keep seeing messages lively
 	SendMessage(context.Context, *ChatMessageRequest) (*empty.Empty, error)
 	// To close chat session for user. if user owns leftover it deletes messages.
@@ -106,6 +130,9 @@ type UnimplementedChatServiceServer struct{}
 
 func (UnimplementedChatServiceServer) JoinChat(*JoinChatRequest, grpc.ServerStreamingServer[ChatMessage]) error {
 	return status.Errorf(codes.Unimplemented, "method JoinChat not implemented")
+}
+func (UnimplementedChatServiceServer) WatchChatQueue(*JoinChatRequest, grpc.ServerStreamingServer[QueueResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method WatchChatQueue not implemented")
 }
 func (UnimplementedChatServiceServer) SendMessage(context.Context, *ChatMessageRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
@@ -144,6 +171,17 @@ func _ChatService_JoinChat_Handler(srv interface{}, stream grpc.ServerStream) er
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ChatService_JoinChatServer = grpc.ServerStreamingServer[ChatMessage]
+
+func _ChatService_WatchChatQueue_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(JoinChatRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ChatServiceServer).WatchChatQueue(m, &grpc.GenericServerStream[JoinChatRequest, QueueResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ChatService_WatchChatQueueServer = grpc.ServerStreamingServer[QueueResponse]
 
 func _ChatService_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ChatMessageRequest)
@@ -201,6 +239,11 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "JoinChat",
 			Handler:       _ChatService_JoinChat_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "WatchChatQueue",
+			Handler:       _ChatService_WatchChatQueue_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -28,8 +28,8 @@ type ChatMessage struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	LeftoverId    string                 `protobuf:"bytes,2,opt,name=leftover_id,json=leftoverId,proto3" json:"leftover_id,omitempty"`
 	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Message       *string                `protobuf:"bytes,4,opt,name=message,proto3,oneof" json:"message,omitempty"`
-	Image         *string                `protobuf:"bytes,5,opt,name=image,proto3,oneof" json:"image,omitempty"`
+	Message       string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	Image         string                 `protobuf:"bytes,5,opt,name=image,proto3" json:"image,omitempty"`
 	CreatedAt     *timestamp.Timestamp   `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -87,15 +87,15 @@ func (x *ChatMessage) GetUserId() string {
 }
 
 func (x *ChatMessage) GetMessage() string {
-	if x != nil && x.Message != nil {
-		return *x.Message
+	if x != nil {
+		return x.Message
 	}
 	return ""
 }
 
 func (x *ChatMessage) GetImage() string {
-	if x != nil && x.Image != nil {
-		return *x.Image
+	if x != nil {
+		return x.Image
 	}
 	return ""
 }
@@ -111,8 +111,8 @@ type ChatMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	LeftoverId    string                 `protobuf:"bytes,1,opt,name=leftover_id,json=leftoverId,proto3" json:"leftover_id,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Message       *string                `protobuf:"bytes,3,opt,name=message,proto3,oneof" json:"message,omitempty"`
-	Image         *string                `protobuf:"bytes,4,opt,name=image,proto3,oneof" json:"image,omitempty"`
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	Image         string                 `protobuf:"bytes,4,opt,name=image,proto3" json:"image,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -162,15 +162,15 @@ func (x *ChatMessageRequest) GetUserId() string {
 }
 
 func (x *ChatMessageRequest) GetMessage() string {
-	if x != nil && x.Message != nil {
-		return *x.Message
+	if x != nil {
+		return x.Message
 	}
 	return ""
 }
 
 func (x *ChatMessageRequest) GetImage() string {
-	if x != nil && x.Image != nil {
-		return *x.Image
+	if x != nil {
+		return x.Image
 	}
 	return ""
 }
@@ -279,32 +279,78 @@ func (x *JoinChatRequest) GetUserId() string {
 	return ""
 }
 
+type QueueResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QueuedCount   int32                  `protobuf:"varint,1,opt,name=queued_count,json=queuedCount,proto3" json:"queued_count,omitempty"`
+	Position      int32                  `protobuf:"varint,2,opt,name=position,proto3" json:"position,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueueResponse) Reset() {
+	*x = QueueResponse{}
+	mi := &file_chat_chat_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueueResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueueResponse) ProtoMessage() {}
+
+func (x *QueueResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_chat_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueueResponse.ProtoReflect.Descriptor instead.
+func (*QueueResponse) Descriptor() ([]byte, []int) {
+	return file_chat_chat_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *QueueResponse) GetQueuedCount() int32 {
+	if x != nil {
+		return x.QueuedCount
+	}
+	return 0
+}
+
+func (x *QueueResponse) GetPosition() int32 {
+	if x != nil {
+		return x.Position
+	}
+	return 0
+}
+
 var File_chat_chat_proto protoreflect.FileDescriptor
 
 const file_chat_chat_proto_rawDesc = "" +
 	"\n" +
-	"\x0fchat/chat.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe2\x01\n" +
+	"\x0fchat/chat.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc2\x01\n" +
 	"\vChatMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vleftover_id\x18\x02 \x01(\tR\n" +
 	"leftoverId\x12\x17\n" +
-	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x1d\n" +
-	"\amessage\x18\x04 \x01(\tH\x00R\amessage\x88\x01\x01\x12\x19\n" +
-	"\x05image\x18\x05 \x01(\tH\x01R\x05image\x88\x01\x01\x129\n" +
+	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x18\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\x12\x14\n" +
+	"\x05image\x18\x05 \x01(\tR\x05image\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB\n" +
-	"\n" +
-	"\b_messageB\b\n" +
-	"\x06_image\"\x9e\x01\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"~\n" +
 	"\x12ChatMessageRequest\x12\x1f\n" +
 	"\vleftover_id\x18\x01 \x01(\tR\n" +
 	"leftoverId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1d\n" +
-	"\amessage\x18\x03 \x01(\tH\x00R\amessage\x88\x01\x01\x12\x19\n" +
-	"\x05image\x18\x04 \x01(\tH\x01R\x05image\x88\x01\x01B\n" +
-	"\n" +
-	"\b_messageB\b\n" +
-	"\x06_image\"J\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12\x14\n" +
+	"\x05image\x18\x04 \x01(\tR\x05image\"J\n" +
 	"\x0eEndChatRequest\x12\x1f\n" +
 	"\vleftover_id\x18\x01 \x01(\tR\n" +
 	"leftoverId\x12\x17\n" +
@@ -312,9 +358,13 @@ const file_chat_chat_proto_rawDesc = "" +
 	"\x0fJoinChatRequest\x12\x1f\n" +
 	"\vleftover_id\x18\x01 \x01(\tR\n" +
 	"leftoverId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId2\xb8\x01\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"N\n" +
+	"\rQueueResponse\x12!\n" +
+	"\fqueued_count\x18\x01 \x01(\x05R\vqueuedCount\x12\x1a\n" +
+	"\bposition\x18\x02 \x01(\x05R\bposition2\xf0\x01\n" +
 	"\vChatService\x12.\n" +
-	"\bJoinChat\x12\x10.JoinChatRequest\x1a\f.ChatMessage\"\x000\x01\x12<\n" +
+	"\bJoinChat\x12\x10.JoinChatRequest\x1a\f.ChatMessage\"\x000\x01\x126\n" +
+	"\x0eWatchChatQueue\x12\x10.JoinChatRequest\x1a\x0e.QueueResponse\"\x000\x01\x12<\n" +
 	"\vSendMessage\x12\x13.ChatMessageRequest\x1a\x16.google.protobuf.Empty\"\x00\x12;\n" +
 	"\x0eEndChatSession\x12\x0f.EndChatRequest\x1a\x16.google.protobuf.Empty\"\x00B\bZ\x06./chatb\x06proto3"
 
@@ -330,25 +380,28 @@ func file_chat_chat_proto_rawDescGZIP() []byte {
 	return file_chat_chat_proto_rawDescData
 }
 
-var file_chat_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_chat_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_chat_chat_proto_goTypes = []any{
 	(*ChatMessage)(nil),         // 0: ChatMessage
 	(*ChatMessageRequest)(nil),  // 1: ChatMessageRequest
 	(*EndChatRequest)(nil),      // 2: EndChatRequest
 	(*JoinChatRequest)(nil),     // 3: JoinChatRequest
-	(*timestamp.Timestamp)(nil), // 4: google.protobuf.Timestamp
-	(*empty.Empty)(nil),         // 5: google.protobuf.Empty
+	(*QueueResponse)(nil),       // 4: QueueResponse
+	(*timestamp.Timestamp)(nil), // 5: google.protobuf.Timestamp
+	(*empty.Empty)(nil),         // 6: google.protobuf.Empty
 }
 var file_chat_chat_proto_depIdxs = []int32{
-	4, // 0: ChatMessage.created_at:type_name -> google.protobuf.Timestamp
+	5, // 0: ChatMessage.created_at:type_name -> google.protobuf.Timestamp
 	3, // 1: ChatService.JoinChat:input_type -> JoinChatRequest
-	1, // 2: ChatService.SendMessage:input_type -> ChatMessageRequest
-	2, // 3: ChatService.EndChatSession:input_type -> EndChatRequest
-	0, // 4: ChatService.JoinChat:output_type -> ChatMessage
-	5, // 5: ChatService.SendMessage:output_type -> google.protobuf.Empty
-	5, // 6: ChatService.EndChatSession:output_type -> google.protobuf.Empty
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
+	3, // 2: ChatService.WatchChatQueue:input_type -> JoinChatRequest
+	1, // 3: ChatService.SendMessage:input_type -> ChatMessageRequest
+	2, // 4: ChatService.EndChatSession:input_type -> EndChatRequest
+	0, // 5: ChatService.JoinChat:output_type -> ChatMessage
+	4, // 6: ChatService.WatchChatQueue:output_type -> QueueResponse
+	6, // 7: ChatService.SendMessage:output_type -> google.protobuf.Empty
+	6, // 8: ChatService.EndChatSession:output_type -> google.protobuf.Empty
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -359,15 +412,13 @@ func file_chat_chat_proto_init() {
 	if File_chat_chat_proto != nil {
 		return
 	}
-	file_chat_chat_proto_msgTypes[0].OneofWrappers = []any{}
-	file_chat_chat_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chat_chat_proto_rawDesc), len(file_chat_chat_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

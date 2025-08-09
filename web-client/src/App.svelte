@@ -1,69 +1,33 @@
 <script>
-  import ChatExample from './components/ChatExample.svelte';
-  import LeftoverExample from './components/LeftoverExample.svelte';
-  
-  let activeTab = 'leftover';
+  import { onMount } from 'svelte';
+  import ChatExample from '@components/ChatExample.svelte';
+  import LeftoverExample from '@components/LeftoverExample.svelte';
+  import NotFound from '@components/NotFound.svelte';
+  import { v4 as uuidv4 } from 'uuid';
+
+  let route = '/leftover';
+
+  function setRouteFromHash() {
+    const h = (window.location.hash || '#/leftover').slice(1);
+    route = h || '/leftover';
+  }
+
+  onMount(() => {
+    setRouteFromHash();
+    window.addEventListener('hashchange', setRouteFromHash);
+    if (!sessionStorage.getItem('userId')) {
+      sessionStorage.setItem('userId', uuidv4());
+    }
+    return () => window.removeEventListener('hashchange', setRouteFromHash);
+  });
 </script>
 
-<main>
-  <h1>gRPC-Web Demo</h1>
-
-  <div class="tabs">
-    <button 
-      class:active={activeTab === 'leftover'} 
-      on:click={() => activeTab = 'leftover'}
-    >
-      Leftover Service
-    </button>
-    <button 
-      class:active={activeTab === 'chat'} 
-      on:click={() => activeTab = 'chat'}
-    >
-      Chat Service
-    </button>
-  </div>
-
-  {#if activeTab === 'leftover'}
+<main class="flex flex-col items-center justify-center h-screen">
+  {#if route === '/leftover'}
     <LeftoverExample />
-  {:else if activeTab === 'chat'}
+  {:else if route.startsWith('/chat')}
     <ChatExample />
+  {:else}
+    <NotFound path={route} />
   {/if}
 </main>
-
-<style>
-  main {
-    padding: 20px;
-    font-family: Arial, sans-serif;
-  }
-  
-  h1 {
-    text-align: center;
-    color: #333;
-  }
-  
-  .tabs {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-    gap: 10px;
-  }
-  
-  .tabs button {
-    padding: 10px 20px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background-color: white;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .tabs button:hover {
-    background-color: #f0f0f0;
-  }
-  
-  .tabs button.active {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
-  }
-</style>

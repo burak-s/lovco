@@ -32,16 +32,14 @@
         console.error('Failed to add leftover:', handleGrpcError(error));
       } else {
         console.log('Leftover added successfully');
-        // Reset form
         newLeftover = {
-          ownerId: '',
+          ownerId: sessionStorage.getItem('userId'),
           name: '',
           description: '',
           image: '',
           longitude: 0,
           latitude: 0
         };
-        // Refresh the list
         getLeftovers();
       }
     });
@@ -49,8 +47,7 @@
 
   function getLeftovers() {
     const request = new LeftoverRequest();
-    // You might want to set specific filters here
-    
+
     leftoverClient.getLeftovers(request, {}, (error, response) => {
       if (error) {
         console.error('Failed to get leftovers:', handleGrpcError(error));
@@ -104,34 +101,30 @@
     });
   }
 
-  // Load leftovers on component mount
   getLeftovers();
 </script>
 
 <div class="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">
-  <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Leftover Service Example</h2>
+  <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Leftover Service</h2>
   
   <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-    <h3 class="text-xl font-semibold text-gray-700 mb-4">Add New Leftover</h3>
+    <h3 class="text-xl font-semibold text-gray-700 mb-4">New Leftover</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-      <input 
-        bind:value={newLeftover.ownerId} 
-        placeholder="Owner ID" 
-        class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      />
       <input 
         bind:value={newLeftover.name} 
         placeholder="Name" 
-        class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent col-span-2"
       />
-      <input 
+      <textarea 
         bind:value={newLeftover.description} 
         placeholder="Description" 
-        class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent md:col-span-2"
-      />
+        class="px-3 py-2 border h-30 resize-none border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent md:col-span-2 align-top"
+        style="vertical-align: top; text-align: start;"
+      ></textarea>
+      <!-- TODO: Add cloud storage -->
       <input 
         bind:value={newLeftover.image} 
-        placeholder="Image URL" 
+        placeholder="Image" 
         class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent md:col-span-2"
       />
       <input 
@@ -170,17 +163,11 @@
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {#each leftovers as leftover}
+      <a href={`#/chat?lid=${leftover.id}`}>
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-lg transition duration-200">
           <h4 class="text-lg font-semibold text-gray-800 mb-3">{leftover.name}</h4>
           
           <div class="space-y-2 mb-4">
-            <p class="text-sm text-gray-600">
-              <span class="font-medium text-gray-700">ID:</span> 
-              <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{leftover.id}</span>
-            </p>
-            <p class="text-sm text-gray-600">
-              <span class="font-medium text-gray-700">Owner:</span> {leftover.ownerId}
-            </p>
             <p class="text-sm text-gray-600">
               <span class="font-medium text-gray-700">Description:</span> {leftover.description}
             </p>
@@ -203,16 +190,19 @@
               on:click={() => getLeftover(leftover.id)}
               class="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-200"
             >
-              Get Details
+              Demand or Get Details
             </button>
+            {#if leftover.ownerId === sessionStorage.getItem('userId')}
             <button 
-              on:click={() => deleteLeftover(leftover.id, leftover.ownerId)}
+              on:click={() => deleteLeftover(leftover.id, sessionStorage.getItem('userId'))}
               class="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-200"
             >
               Delete
             </button>
+            {/if}
           </div>
         </div>
+      </a>
       {/each}
     </div>
     

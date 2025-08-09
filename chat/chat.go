@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -11,21 +12,13 @@ import (
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type DatabaseInterface interface {
 	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
-}
-
-type chatModel struct {
-	LeftoverID string    `db:"leftover_id"`
-	UserID     string    `db:"user_id"`
-	Message    string    `db:"message"`
-	Image      string    `db:"image"`
-	IsSeen     bool      `db:"is_seen"`
-	CreatedAt  time.Time `db:"created_at"`
 }
 
 // A room is a limited private chat between a user and a leftover owner.
@@ -79,6 +72,7 @@ func joinRoom(roomID string, uid string, stream ChatService_JoinChatServer) erro
 
 	// lock room to prevent race conditions
 	room.mu.Lock()
+
 	if room.closed {
 		// if room is closed unlock, return error
 		room.mu.Unlock()
@@ -115,6 +109,7 @@ func leaveRoom(db DatabaseInterface, roomID string, uid string) {
 
 	isOwner, err := isUserOwner(context.Background(), db, uid, roomID)
 	if err != nil {
+		fmt.Println("isUserOwner error", err)
 		return
 	}
 
@@ -153,7 +148,9 @@ func (room *room) runBroadcaster() {
 
 func isUserOwner(ctx context.Context, db DatabaseInterface, userID string, leftoverID string) (bool, error) {
 	query := `
-		SELECT owner_id FROM leftover WHERE id = $1
+		SELECT owner_id 
+		FROM leftover 
+		WHERE id = $1
 	`
 	row := db.QueryRow(ctx, query, leftoverID)
 	var ownerID string
@@ -162,6 +159,33 @@ func isUserOwner(ctx context.Context, db DatabaseInterface, userID string, lefto
 		return false, status.Errorf(codes.Internal, "failed to get leftover owner: %v", err)
 	}
 	return ownerID == userID, nil
+}
+
+func getChatMessages(ctx context.Context, db DatabaseInterface, leftoverID string) ([]*ChatMessage, error) {
+	query := `
+		SELECT leftover_id, user_id, message, image, created_at
+		FROM chat_message
+		WHERE leftover_id = $1
+		ORDER BY created_at ASC
+	`
+	rows, err := db.Query(ctx, query, leftoverID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get chat messages: %v", err)
+	}
+	defer rows.Close()
+
+	msgs := make([]*ChatMessage, 0)
+	for rows.Next() {
+		var msg ChatMessage
+		var createdAt time.Time
+		err := rows.Scan(&msg.LeftoverId, &msg.UserId, &msg.Message, &msg.Image, &createdAt)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to scan chat message: %v", err)
+		}
+		msg.CreatedAt = timestamppb.New(createdAt)
+		msgs = append(msgs, &msg)
+	}
+	return msgs, nil
 }
 
 type ChatServer struct {
@@ -180,8 +204,21 @@ func (s *ChatServer) JoinChat(req *JoinChatRequest, stream ChatService_JoinChatS
 	lid := req.LeftoverId
 	ctx := stream.Context()
 
+	// get message history
+	history, err := getChatMessages(ctx, s.db, lid)
+	if err != nil {
+		return err
+	}
+
+	for _, msg := range history {
+		err := stream.Send(msg)
+		if err != nil {
+			return err
+		}
+	}
+
 	// try to join room
-	err := joinRoom(lid, uid, stream)
+	err = joinRoom(lid, uid, stream)
 	if err != nil {
 		return err
 	}
@@ -190,19 +227,72 @@ func (s *ChatServer) JoinChat(req *JoinChatRequest, stream ChatService_JoinChatS
 	for {
 		select {
 		case <-ctx.Done():
+			fmt.Println("ctx done for ", lid)
 			return nil
 		default:
-			var in ChatMessage
-			if err := stream.RecvMsg(&in); err != nil {
-				return err
-			}
+			// var in ChatMessage
+			// if err := stream.RecvMsg(&in); err != nil {
+			// 	fmt.Println("stream.RecvMsg error", err)
+			// 	return err
+			// }
+
+			// roomsMu.RLock()
+			// room := rooms[lid]
+			// roomsMu.RUnlock()
+
+			// if room != nil {
+			// 	room.broadcaster <- &in
+			// }
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+}
+
+func (s *ChatServer) WatchChatQueue(req *JoinChatRequest, stream ChatService_WatchChatQueueServer) error {
+	uid := req.UserId
+	lid := req.LeftoverId
+	ctx := stream.Context()
+
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			var queuedCount int
+			var position int32 = -1
 
 			roomsMu.RLock()
 			room := rooms[lid]
 			roomsMu.RUnlock()
 
 			if room != nil {
-				room.broadcaster <- &in
+				room.mu.Lock()
+				if room.closed {
+					room.mu.Unlock()
+					return status.Errorf(codes.Canceled, "chat session is closed")
+				}
+
+				queuedCount = len(room.queue)
+				for i, w := range room.queue {
+					if w.uid == uid {
+						position = int32(i + 1)
+						break
+					}
+				}
+				room.mu.Unlock()
+			} else {
+				queuedCount = 0
+				position = -1
+			}
+
+			if err := stream.Send(&QueueResponse{
+				QueuedCount: int32(queuedCount),
+				Position:    position,
+			}); err != nil {
+				return err
 			}
 		}
 	}
@@ -218,6 +308,19 @@ func (s *ChatServer) SendMessage(ctx context.Context, req *ChatMessageRequest) (
 		return nil, status.Errorf(codes.Internal, "failed to send message: %v", err)
 	}
 
+	roomsMu.RLock()
+	room := rooms[req.LeftoverId]
+	roomsMu.RUnlock()
+	if room != nil {
+		room.broadcaster <- &ChatMessage{
+			LeftoverId: req.LeftoverId,
+			UserId:     req.UserId,
+			Message:    req.Message,
+			Image:      req.Image,
+			CreatedAt:  timestamppb.Now(),
+		}
+	}
+
 	return &emptypb.Empty{}, nil
 }
 
@@ -228,9 +331,7 @@ func (s *ChatServer) EndChatSession(ctx context.Context, req *EndChatRequest) (*
 	}
 
 	if !isOwner {
-		// leave room
-		// 0
-
+		leaveRoom(s.db, req.LeftoverId, req.UserId)
 		return &emptypb.Empty{}, nil
 	}
 

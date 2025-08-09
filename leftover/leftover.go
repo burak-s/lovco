@@ -2,6 +2,9 @@ package leftover
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -26,6 +29,58 @@ type LeftoverModel struct {
 	Image       string    `db:"image"`
 	Longitude   float64   `db:"longitude"`
 	Latitude    float64   `db:"latitude"`
+}
+
+func buildLeftoverSelectQuery(req *LeftoverRequest) (string, []interface{}) {
+	baseQuery := `
+		SELECT id, owner_id, name, description, image, longitude, latitude 
+		FROM leftover
+	`
+
+	slog.Info("req", "req", req)
+
+	conds := make([]string, 0)
+	args := make([]interface{}, 0)
+	argIdx := 1
+
+	if req.OwnerId != "" {
+		conds = append(conds, fmt.Sprintf("owner_id = $%d", argIdx))
+		args = append(args, req.OwnerId)
+		argIdx++
+	}
+	if req.Name != "" {
+		conds = append(conds, fmt.Sprintf("name ILIKE $%d", argIdx))
+		args = append(args, "%"+req.Name+"%")
+		argIdx++
+	}
+	if req.Description != "" {
+		conds = append(conds, fmt.Sprintf("description ILIKE $%d", argIdx))
+		args = append(args, "%"+req.Description+"%")
+		argIdx++
+	}
+	if req.Image != "" {
+		conds = append(conds, fmt.Sprintf("image ILIKE $%d", argIdx))
+		args = append(args, "%"+req.Image+"%")
+		argIdx++
+	}
+
+	if req.Longitude != 0 {
+		conds = append(conds, fmt.Sprintf("longitude = $%d", argIdx))
+		args = append(args, req.Longitude)
+		argIdx++
+	}
+
+	if req.Latitude != 0 {
+		conds = append(conds, fmt.Sprintf("latitude = $%d", argIdx))
+		args = append(args, req.Latitude)
+		argIdx++
+	}
+
+	query := baseQuery
+	if len(conds) > 0 {
+		query += " WHERE " + strings.Join(conds, " AND ")
+	}
+	return query, args
 }
 
 // Inject database into server
@@ -86,12 +141,9 @@ func (s *LeftoverServer) GetLeftover(ctx context.Context, req *LeftoverIdentity)
 func (s *LeftoverServer) GetLeftovers(ctx context.Context, req *LeftoverRequest) (*LeftoverResponse, error) {
 	items := make([]*Leftover, 0)
 
-	query := `
-		SELECT id, owner_id, name, description, image, longitude, latitude 
-		FROM leftover
-		WHERE name = $1
-	`
-	rows, err := s.db.Query(ctx, query, req.Name)
+	query, args := buildLeftoverSelectQuery(req)
+
+	rows, err := s.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to query leftovers: %v", err)
 	}

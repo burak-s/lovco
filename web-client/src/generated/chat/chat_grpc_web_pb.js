@@ -136,6 +136,62 @@ proto.ChatServicePromiseClient.prototype.joinChat =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.JoinChatRequest,
+ *   !proto.QueueResponse>}
+ */
+const methodDescriptor_ChatService_WatchChatQueue = new grpc.web.MethodDescriptor(
+  '/ChatService/WatchChatQueue',
+  grpc.web.MethodType.SERVER_STREAMING,
+  proto.JoinChatRequest,
+  proto.QueueResponse,
+  /**
+   * @param {!proto.JoinChatRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.QueueResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.JoinChatRequest} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.QueueResponse>}
+ *     The XHR Node Readable Stream
+ */
+proto.ChatServiceClient.prototype.watchChatQueue =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/ChatService/WatchChatQueue',
+      request,
+      metadata || {},
+      methodDescriptor_ChatService_WatchChatQueue);
+};
+
+
+/**
+ * @param {!proto.JoinChatRequest} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.QueueResponse>}
+ *     The XHR Node Readable Stream
+ */
+proto.ChatServicePromiseClient.prototype.watchChatQueue =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/ChatService/WatchChatQueue',
+      request,
+      metadata || {},
+      methodDescriptor_ChatService_WatchChatQueue);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.ChatMessageRequest,
  *   !proto.google.protobuf.Empty>}
  */

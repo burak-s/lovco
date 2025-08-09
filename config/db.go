@@ -14,11 +14,11 @@ import (
 var DB *pgxpool.Pool
 
 func InitDB(logger *slog.Logger) {
-	err := godotenv.Load()
-	if err != nil {
-		logger.Error("error loading .env file", "error", err)
-		os.Exit(1)
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	logger.Error("error loading .env file", "error", err)
+	// 	os.Exit(1)
+	// }
 
 	dsn := fmt.Sprintf(
 		"user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",

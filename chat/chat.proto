@@ -9,6 +9,9 @@ service ChatService {
    // Enters chats sees messages
    rpc JoinChat(JoinChatRequest) returns (stream ChatMessage) {}
 
+   // See queue
+   rpc WatchChatQueue(JoinChatRequest) returns (stream QueueResponse) {}
+
    // Sends message keep seeing messages lively
    rpc SendMessage(ChatMessageRequest) returns (google.protobuf.Empty) {}
 
@@ -23,16 +26,16 @@ message ChatMessage {
    string id = 1;
    string leftover_id = 2;
    string user_id = 3;
-   optional string message = 4;
-   optional string image = 5;
+   string message = 4;
+   string image = 5;
    google.protobuf.Timestamp created_at = 6;
 }
 
 message ChatMessageRequest {
    string leftover_id = 1;
    string user_id = 2;
-   optional string message = 3;
-   optional string image = 4;
+   string message = 3;
+   string image = 4;
 }
 
 message EndChatRequest {
@@ -43,4 +46,9 @@ message EndChatRequest {
 message JoinChatRequest {
    string leftover_id = 1;
    string user_id = 2;
+}
+
+message QueueResponse {
+   int32 queued_count = 1;
+   int32 position = 2;
 }

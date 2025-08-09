@@ -3,8 +3,9 @@
   import { 
     JoinChatRequest, 
     ChatMessageRequest, 
-    EndChatRequest 
+    EndChatRequest,
   } from '../generated/chat/chat_pb';
+  import { onMount } from 'svelte';
   
   let leftoverId = '';
   let userId = '';
@@ -12,6 +13,14 @@
   let messages = [];
   let chatStream = null;
   let isConnected = false;
+
+  // Add queue state variables
+  let queueStatus = {
+    position: -1,
+    queuedCount: 0,
+    isQueued: false
+  };
+  let queueStream = null;
 
   function joinChat() {
     if (!leftoverId || !userId) return;
@@ -21,7 +30,6 @@
     request.setUserId(userId);
 
     try {
-      // Start streaming messages
       chatStream = chatClient.joinChat(request);
       isConnected = true;
       
@@ -63,7 +71,7 @@
       if (error) {
         console.error('Failed to send message:', handleGrpcError(error));
       } else {
-        messageText = ''; // Clear input after sending
+        messageText = '';
       }
     });
   }
@@ -72,6 +80,12 @@
     if (chatStream) {
       chatStream.cancel();
       chatStream = null;
+    }
+    
+    // Also cancel queue stream
+    if (queueStream) {
+      queueStream.cancel();
+      queueStream = null;
     }
 
     const request = new EndChatRequest();
@@ -87,59 +101,103 @@
       }
     });
   }
+
+  function watchQueue(){
+    const request = new JoinChatRequest();
+    request.setLeftoverId(leftoverId);
+    request.setUserId(userId);
+
+    try {
+      queueStream = chatClient.watchChatQueue(request);
+      
+      queueStream.on('data', (message) => {
+        // Handle queue status updates
+        queueStatus = {
+          position: message.getPosition(),
+          queuedCount: message.getQueuedCount(),
+          isQueued: message.getPosition() > 0
+        };
+        console.log('Queue status:', queueStatus);
+      });
+
+      queueStream.on('error', (error) => {
+        console.error('Queue error:', handleGrpcError(error));
+      });
+
+      queueStream.on('end', () => {
+        console.log('Queue stream ended');
+      });
+
+    } catch (error) {
+      console.error('Failed to watch queue:', handleGrpcError(error));
+    }
+  }
+
+  onMount(() => {
+    leftoverId = window.location.hash.split('?')[1].split('=')[1];
+    userId = sessionStorage.getItem('userId');
+
+    watchQueue();
+  });
 </script>
 
 <div class="max-w-2xl mx-auto p-6 bg-gray-50 min-h-screen">
-  <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Chat Service Example</h2>
+  <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Chat Service</h2>
   
-  <!-- Connection Controls -->
+  <!-- Queue Status Display -->
+  {#if queueStatus.isQueued}
+    <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+      <div class="flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+        </svg>
+        <div>
+          <strong>You are in queue</strong>
+          <p class="text-sm">Position: {queueStatus.position} of {queueStatus.queuedCount} people waiting</p>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  {#if !isConnected && !queueStatus.isQueued}
   <div class="bg-white rounded-lg shadow-md p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-700 mb-4">
-      {isConnected ? 'Connected to Chat' : 'Join Chat'}
+      Ask leftover owner for item details and delivery details
     </h3>
-    
-    <div class="flex flex-col sm:flex-row gap-3 mb-4">
-      <input 
-        bind:value={leftoverId} 
-        placeholder="Leftover ID" 
-        disabled={isConnected}
-        class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
-      />
-      <input 
-        bind:value={userId} 
-        placeholder="User ID" 
-        disabled={isConnected}
-        class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
-      />
+    <button 
+      on:click={joinChat}
+      disabled={!leftoverId || !userId}
+      class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition duration-200"
+    >
+      Join Chat
+    </button>
+  </div>
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+      <div class="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+        </svg>
+      </div>
+      <h3 class="text-lg font-medium text-gray-700 mb-2">Ready to Chat</h3>
+      <p class="text-gray-500">Enter your details above to join the chat room</p>
     </div>
+  {/if}
     
-    {#if !isConnected}
-      <button 
-        on:click={joinChat}
-        disabled={!leftoverId || !userId}
-        class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition duration-200"
-      >
-        Join Chat
-      </button>
-    {:else}
-      <button 
-        on:click={endChat}
-        class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-200"
-      >
-        End Chat
-      </button>
-    {/if}
-    
-    {#if isConnected}
-      <div class="mt-3 flex items-center text-sm text-green-600">
+    {#if isConnected && !queueStatus.isQueued}
+      <div class="mt-3 flex items-center flex-col text-sm text-green-600">
+        <button 
+          on:click={endChat}
+          class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-200"
+        >
+          End Chat
+        </button>
         <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
         Connected to chat for leftover: {leftoverId}
       </div>
     {/if}
-  </div>
 
-  {#if isConnected}
-    <!-- Messages Display -->
+
+  {#if isConnected && !queueStatus.isQueued}
     <div class="bg-white rounded-lg shadow-md mb-4 flex flex-col h-96">
       <div class="p-4 border-b border-gray-200">
         <h3 class="text-lg font-semibold text-gray-700">Messages</h3>
@@ -157,7 +215,7 @@
                   <div class="flex items-center justify-between mb-1">
                     <span class="text-sm font-medium text-gray-700">User {message.userId}</span>
                     {#if message.createdAt}
-                      <span class="text-xs text-gray-500">{new Date(message.createdAt).toLocaleTimeString()}</span>
+                      <span class="text-xs text-gray-500">{new Date(message.createdAt)}</span>
                     {/if}
                   </div>
                   <p class="text-gray-800">{message.message}</p>
@@ -201,17 +259,6 @@
         </button>
       </div>
       <p class="text-xs text-gray-500 mt-2">Press Enter to send</p>
-    </div>
-  {:else}
-    <!-- Not Connected State -->
-    <div class="bg-white rounded-lg shadow-md p-8 text-center">
-      <div class="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-        </svg>
-      </div>
-      <h3 class="text-lg font-medium text-gray-700 mb-2">Ready to Chat</h3>
-      <p class="text-gray-500">Enter your details above to join the chat room</p>
     </div>
   {/if}
 </div>

@@ -8,4 +8,6 @@
 .env.production.local
 schema.sql
 bin/
-
+chat/*.pb.go
+leftover/*.pb.go
+chat/lol.md

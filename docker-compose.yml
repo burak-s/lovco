@@ -6,17 +6,54 @@ services:
     ports:
       - 5432:5432
     environment:
+      POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
     volumes:
       - lovco-data:/var/lib/postgresql/data
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}"]
+      test: ["CMD", "pg_isready", "-U", "${DB_USER:-lovco}", "-d", "${DB_NAME:-lovco_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - lovco_network
+
+  grpc_server:
+    build: .
+    container_name: lovco_grpc
+    ports:
+      - "50051:50051"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+     
+    networks:
+      - lovco_network
+
+  envoy:
+    image: envoyproxy/envoy:v1.35.0
+    container_name: lovco_envoy
+    ports:
+      - "8080:8080"
+      - "9901:9901"
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    depends_on:
+      - grpc_server
+    networks:
+      - lovco_network
 
 volumes:
   lovco-data:
+
+networks:
+  lovco_network:
+    driver: bridge
