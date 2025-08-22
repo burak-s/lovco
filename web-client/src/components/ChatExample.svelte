@@ -31,7 +31,6 @@
 
     try {
       chatStream = chatClient.joinChat(request);
-      isConnected = true;
       
       chatStream.on('data', (message) => {
         messages = [...messages, {
@@ -100,6 +99,7 @@
         isConnected = false;
       }
     });
+    window.location.href = '/leftover';
   }
 
   function watchQueue(){
@@ -111,13 +111,18 @@
       queueStream = chatClient.watchChatQueue(request);
       
       queueStream.on('data', (message) => {
-        // Handle queue status updates
+        const pos = message.getPosition()
         queueStatus = {
-          position: message.getPosition(),
+          position: pos,
           queuedCount: message.getQueuedCount(),
-          isQueued: message.getPosition() > 0
+          isQueued: pos > 0
         };
-        console.log('Queue status:', queueStatus);
+
+        if (pos === 0) {
+          isConnected = true;
+        } else {
+          isConnected = false;
+        }
       });
 
       queueStream.on('error', (error) => {
@@ -141,10 +146,8 @@
   });
 </script>
 
-<div class="max-w-2xl mx-auto p-6 bg-gray-50 min-h-screen">
+<div class="mx-auto p-6 min-h-screen">
   <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Chat Service</h2>
-  
-  <!-- Queue Status Display -->
   {#if queueStatus.isQueued}
     <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
       <div class="flex items-center">
@@ -159,7 +162,7 @@
     </div>
   {/if}
 
-  {#if !isConnected && !queueStatus.isQueued}
+  {#if !isConnected}
   <div class="bg-white rounded-lg shadow-md p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-700 mb-4">
       Ask leftover owner for item details and delivery details
@@ -183,21 +186,19 @@
     </div>
   {/if}
     
-    {#if isConnected && !queueStatus.isQueued}
-      <div class="mt-3 flex items-center flex-col text-sm text-green-600">
-        <button 
-          on:click={endChat}
-          class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-200"
-        >
-          End Chat
-        </button>
-        <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-        Connected to chat for leftover: {leftoverId}
-      </div>
-    {/if}
-
-
-  {#if isConnected && !queueStatus.isQueued}
+  {#if isConnected}
+    <div class="mt-3 flex items-center justify-between flex-row text-sm text-green-600">
+      <button
+        on:click={() => window.location.href = '/leftover'}
+        class="flex items-center justify-center px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 mr-2"
+        title="Navigate Back"
+        aria-label="Navigate Back"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+    </div>
     <div class="bg-white rounded-lg shadow-md mb-4 flex flex-col h-96">
       <div class="p-4 border-b border-gray-200">
         <h3 class="text-lg font-semibold text-gray-700">Messages</h3>
@@ -213,7 +214,7 @@
               <div class="flex-1">
                 <div class="bg-gray-100 rounded-lg p-3">
                   <div class="flex items-center justify-between mb-1">
-                    <span class="text-sm font-medium text-gray-700">User {message.userId}</span>
+                    <span class="text-sm font-medium text-gray-700">User</span>
                     {#if message.createdAt}
                       <span class="text-xs text-gray-500">{new Date(message.createdAt)}</span>
                     {/if}

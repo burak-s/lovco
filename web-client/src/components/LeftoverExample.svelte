@@ -16,11 +16,10 @@
     longitude: 0,
     latitude: 0
   };
-  let selectedLeftoverId = '';
 
   function addLeftover() {
     const request = new LeftoverRequest();
-    request.setOwnerId(newLeftover.ownerId);
+    request.setOwnerId(sessionStorage.getItem('userId'));
     request.setName(newLeftover.name);
     request.setDescription(newLeftover.description);
     request.setImage(newLeftover.image);
@@ -29,6 +28,7 @@
 
     leftoverClient.addLeftover(request, {}, (error, response) => {
       if (error) {
+        console.log(newLeftover);
         console.error('Failed to add leftover:', handleGrpcError(error));
       } else {
         console.log('Leftover added successfully');
@@ -104,7 +104,7 @@
   getLeftovers();
 </script>
 
-<div class="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">
+<div class="max-w-4xl mx-auto p-6 min-h-screen">
   <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Leftover Service</h2>
   
   <div class="bg-white rounded-lg shadow-md p-6 mb-8">

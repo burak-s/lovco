@@ -11,10 +11,13 @@ RUN CGO_ENABLED=0 \
     go build -o lovco server/main.go
 
 FROM alpine:3.22
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates wget
     
 WORKDIR /root/
 COPY --from=builder /app/lovco .
+
+# gRPC health probe (static)
+RUN wget -qO /bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.26/grpc_health_probe-linux-amd64 && chmod +x /bin/grpc_health_probe
 
 EXPOSE 50051
 

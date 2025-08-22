@@ -2,7 +2,7 @@ package chat
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -30,11 +30,17 @@ type DatabaseInterface interface {
 type room struct {
 	mu          sync.Mutex // lock for slots and queue
 	slots       map[string]ChatService_JoinChatServer
+	ownerID     string
+	guestID     string
 	queue       []waiter          // queue for users waiting for a slot
 	broadcaster chan *ChatMessage // broadcast channel for messages
 	closed      bool              // if the room is closed
 }
 
+// artificial queue for business logic. Users waiting for a slot
+// uid is the user id
+// stream is the stream for the user
+// ready is a channel that is closed when the user is ready to be added to the slots
 type waiter struct {
 	uid    string
 	stream ChatService_JoinChatServer
@@ -66,22 +72,32 @@ func getRoom(roomID string) *room {
 	return r
 }
 
-func joinRoom(roomID string, uid string, stream ChatService_JoinChatServer) error {
+func joinRoom(roomID string, uid string, isOwner bool, stream ChatService_JoinChatServer) error {
+	slog.Info("user is trying to join room", "user_id", uid, "leftover_id", roomID, "is_owner", isOwner)
 	// lock room map to prevent race conditions
 	room := getRoom(roomID)
 
 	// lock room to prevent race conditions
 	room.mu.Lock()
-
 	if room.closed {
 		// if room is closed unlock, return error
 		room.mu.Unlock()
 		return status.Errorf(codes.Canceled, "chat session is closed")
 	}
 
+	// owner can join room a seat is always available for them
+	if isOwner {
+		slog.Info("user is owner, joining room", "user_id", uid, "leftover_id", roomID)
+		room.ownerID = uid
+		room.slots[uid] = stream
+		room.mu.Unlock()
+		return nil
+	}
+
 	// if there is a slot available, add to slots and return
-	// need to add logic for room owner.
-	if len(room.slots) < 2 {
+	if room.guestID == "" || room.guestID == uid {
+		slog.Info("user is guest, joining room", "user_id", uid, "leftover_id", roomID)
+		room.guestID = uid
 		room.slots[uid] = stream
 		room.mu.Unlock()
 		return nil
@@ -93,7 +109,9 @@ func joinRoom(roomID string, uid string, stream ChatService_JoinChatServer) erro
 		stream: stream,
 		ready:  make(chan struct{}),
 	}
+
 	room.queue = append(room.queue, queuedWaiter)
+	slog.Info("user is guest, joining queue", "user_id", uid, "leftover_id", roomID)
 	room.mu.Unlock()
 
 	// Wait for a slot to be available
@@ -102,33 +120,34 @@ func joinRoom(roomID string, uid string, stream ChatService_JoinChatServer) erro
 	return nil
 }
 
-func leaveRoom(db DatabaseInterface, roomID string, uid string) {
+func leaveRoom(roomID string, uid string) {
+	slog.Info("user is leaving room", "user_id", uid, "leftover_id", roomID)
+	// lock room map to prevent race conditions
 	roomsMu.Lock()
 	room := rooms[roomID]
 	roomsMu.Unlock()
 
-	isOwner, err := isUserOwner(context.Background(), db, uid, roomID)
-	if err != nil {
-		fmt.Println("isUserOwner error", err)
-		return
-	}
-
+	// lock room to prevent race conditions
 	room.mu.Lock()
+
+	// remove user from slots
 	delete(room.slots, uid)
 
-	if isOwner {
-		roomsMu.Lock()
-		room.closed = true
-		close(room.broadcaster)
-		delete(rooms, roomID)
-		roomsMu.Unlock()
-	} else {
-		if len(room.queue) > 0 {
-			nextWaiter := room.queue[0]
-			room.queue = room.queue[1:]
-			room.slots[nextWaiter.uid] = nextWaiter.stream
-			close(nextWaiter.ready)
-		}
+	// if user is guest, remove them from room definition
+	if room.guestID == uid {
+		slog.Info("user is guest, removing from room definition", "user_id", uid, "leftover_id", roomID)
+		room.guestID = ""
+	}
+
+	// if there is a queue, remove the first user from the queue and add them to the slots
+	if len(room.queue) > 0 {
+		slog.Info("another user is joining room", "user_id", uid, "leftover_id", roomID)
+		nextWaiter := room.queue[0]
+		room.queue = room.queue[1:]
+		room.guestID = nextWaiter.uid
+		// keep the slot
+		room.slots[nextWaiter.uid] = nextWaiter.stream
+		close(nextWaiter.ready)
 	}
 
 	room.mu.Unlock()
@@ -217,32 +236,23 @@ func (s *ChatServer) JoinChat(req *JoinChatRequest, stream ChatService_JoinChatS
 		}
 	}
 
-	// try to join room
-	err = joinRoom(lid, uid, stream)
+	isOwner, err := isUserOwner(ctx, s.db, uid, lid)
 	if err != nil {
 		return err
 	}
-	defer leaveRoom(s.db, lid, uid)
+
+	// try to join room
+	err = joinRoom(lid, uid, isOwner, stream)
+	if err != nil {
+		return err
+	}
+	defer leaveRoom(lid, uid)
 
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Println("ctx done for ", lid)
 			return nil
 		default:
-			// var in ChatMessage
-			// if err := stream.RecvMsg(&in); err != nil {
-			// 	fmt.Println("stream.RecvMsg error", err)
-			// 	return err
-			// }
-
-			// roomsMu.RLock()
-			// room := rooms[lid]
-			// roomsMu.RUnlock()
-
-			// if room != nil {
-			// 	room.broadcaster <- &in
-			// }
 			time.Sleep(50 * time.Millisecond)
 		}
 	}
@@ -280,6 +290,12 @@ func (s *ChatServer) WatchChatQueue(req *JoinChatRequest, stream ChatService_Wat
 					if w.uid == uid {
 						position = int32(i + 1)
 						break
+					}
+				}
+
+				if position == -1 {
+					if _, ok := room.slots[uid]; ok {
+						position = 0
 					}
 				}
 				room.mu.Unlock()
@@ -331,18 +347,30 @@ func (s *ChatServer) EndChatSession(ctx context.Context, req *EndChatRequest) (*
 	}
 
 	if !isOwner {
-		leaveRoom(s.db, req.LeftoverId, req.UserId)
+		slog.Info("user is not owner, leaving room", "user_id", req.UserId, "leftover_id", req.LeftoverId)
+		leaveRoom(req.LeftoverId, req.UserId)
 		return &emptypb.Empty{}, nil
 	}
 
-	query := `
-		DELETE FROM chat_message 
-		WHERE leftover_id = $1
-	`
-	_, err = s.db.Exec(ctx, query, req.LeftoverId)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to end chat session: %v", err)
-	}
+	slog.Info("user is owner, ending chat session", "user_id", req.UserId, "leftover_id", req.LeftoverId)
+
+	// query := `
+	// 	DELETE FROM chat_message
+	// 	WHERE leftover_id = $1
+	// `
+	// _, err = s.db.Exec(ctx, query, req.LeftoverId)
+	// if err != nil {
+	// 	return nil, status.Errorf(codes.Internal, "failed to end chat session: %v", err)
+	// }
+
+	// query = `
+	// 	DELETE FROM leftover
+	// 	WHERE id = $1
+	// `
+	// _, err = s.db.Exec(ctx, query, req.LeftoverId)
+	// if err != nil {
+	// 	return nil, status.Errorf(codes.Internal, "failed to end chat session: %v", err)
+	// }
 
 	return &emptypb.Empty{}, nil
 }

@@ -22,7 +22,7 @@
   });
 </script>
 
-<main class="flex flex-col items-center justify-center h-screen">
+<main class="flex flex-col items-center justify-center h-screen bg-gray-300">
   {#if route === '/leftover'}
     <LeftoverExample />
   {:else if route.startsWith('/chat')}

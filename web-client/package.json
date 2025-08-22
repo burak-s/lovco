@@ -9,7 +9,6 @@
     "preview": "rsbuild preview"
   },
   "dependencies": {
-    "@biomejs/biome": "^2.1.4",
     "@tailwindcss/postcss": "^4.1.11",
     "google-protobuf": "^3.21.4",
     "grpc-web": "^1.5.0",
