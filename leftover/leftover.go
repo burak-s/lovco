@@ -26,14 +26,16 @@ type LeftoverModel struct {
 	OwnerID     uuid.UUID `db:"owner_id"`
 	Name        string    `db:"name"`
 	Description string    `db:"description"`
+	Type        string    `db:"type"` // leftover type e.g. food, electronic,
 	Image       string    `db:"image"`
+	ImageFormat string    `db:"image_format"`
 	Longitude   float64   `db:"longitude"`
 	Latitude    float64   `db:"latitude"`
 }
 
 func buildLeftoverSelectQuery(req *LeftoverRequest) (string, []interface{}) {
 	baseQuery := `
-		SELECT id, owner_id, name, description, image, longitude, latitude 
+		SELECT id, owner_id, name, description, type, image, image_format, longitude, latitude 
 		FROM leftover
 	`
 
@@ -100,10 +102,10 @@ func (s *LeftoverServer) AddLeftover(ctx context.Context, req *LeftoverRequest) 
 	id := uuid.New()
 
 	query := `
-		INSERT INTO leftover (id, owner_id, name, description, image, longitude, latitude) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO leftover (id, owner_id, name, description, type, image, image_format,  longitude, latitude) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
-	_, err := s.db.Exec(ctx, query, id, req.OwnerId, req.Name, req.Description, req.Image, req.Longitude, req.Latitude)
+	_, err := s.db.Exec(ctx, query, id, req.OwnerId, req.Name, req.Description, req.Type, req.Image, req.ImageFormat, req.Longitude, req.Latitude)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to add leftover: %v", err)
 	}
@@ -113,13 +115,13 @@ func (s *LeftoverServer) AddLeftover(ctx context.Context, req *LeftoverRequest) 
 
 func (s *LeftoverServer) GetLeftover(ctx context.Context, req *LeftoverIdentity) (*Leftover, error) {
 	query := `
-		SELECT id, owner_id, name, description, image, longitude, latitude 
+		SELECT id, owner_id, name, description, type, image, image_format, longitude, latitude 
 		FROM leftover 
 		WHERE id = $1
 	`
 	row := s.db.QueryRow(ctx, query, req.Id)
 	var lo LeftoverModel
-	err := row.Scan(&lo.ID, &lo.OwnerID, &lo.Name, &lo.Description, &lo.Image, &lo.Longitude, &lo.Latitude)
+	err := row.Scan(&lo.ID, &lo.OwnerID, &lo.Name, &lo.Description, &lo.Type, &lo.Image, &lo.ImageFormat, &lo.Longitude, &lo.Latitude)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			return nil, status.Errorf(codes.NotFound, "leftover not found")
@@ -151,7 +153,7 @@ func (s *LeftoverServer) GetLeftovers(ctx context.Context, req *LeftoverRequest)
 
 	for rows.Next() {
 		var lo LeftoverModel
-		err := rows.Scan(&lo.ID, &lo.OwnerID, &lo.Name, &lo.Description, &lo.Image, &lo.Longitude, &lo.Latitude)
+		err := rows.Scan(&lo.ID, &lo.OwnerID, &lo.Name, &lo.Description, &lo.Type, &lo.Image, &lo.ImageFormat, &lo.Longitude, &lo.Latitude)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to scan leftover: %v", err)
 		}
@@ -160,7 +162,9 @@ func (s *LeftoverServer) GetLeftovers(ctx context.Context, req *LeftoverRequest)
 			OwnerId:     lo.OwnerID.String(),
 			Name:        lo.Name,
 			Description: lo.Description,
+			Type:        lo.Type,
 			Image:       lo.Image,
+			ImageFormat: lo.ImageFormat,
 			Longitude:   float32(lo.Longitude),
 			Latitude:    float32(lo.Latitude),
 		})

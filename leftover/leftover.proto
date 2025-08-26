@@ -19,7 +19,9 @@ message Leftover {
    string description = 4;
    string image = 5;
    float longitude = 6;
-   float latitude = 7; 
+   float latitude = 7;
+   string image_format = 8;
+   string type = 9; // leftover type e.g. food, electronic, 
 }
 
 message LeftoverRequest {
@@ -29,6 +31,8 @@ message LeftoverRequest {
    string image = 4;
    float longitude = 5;
    float latitude = 6;
+   string image_format=7;
+   string type = 8;  // leftover type e.g. food, electronic, 
 }
 
 message LeftoverResponse {
@@ -48,4 +52,5 @@ message LeftoverQuery {
    string id = 1;
    string name = 2;
    string owner_id = 3;
+   string type = 4;
 }
