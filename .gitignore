@@ -11,3 +11,4 @@ bin/
 chat/*.pb.go
 leftover/*.pb.go
 chat/lol.md
+envoy.yaml

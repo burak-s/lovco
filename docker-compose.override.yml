@@ -1,0 +1,17 @@
+services:
+  db:
+    ports:
+      - "5432:5432"
+
+  envoy:
+    image: envoyproxy/envoy:v1.35.0
+    container_name: lovco_envoy
+    ports:
+      - "8080:8080"
+      - "9901:9901"
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    depends_on:
+      - grpc_server
+    networks:
+      - lovco_network

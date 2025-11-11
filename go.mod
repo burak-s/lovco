@@ -1,9 +1,8 @@
 module lovco
 
-go 1.24.5
+go 1.25.3
 
 require (
-	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/joho/godotenv v1.5.1

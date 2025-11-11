@@ -5,15 +5,17 @@ GOBASE=$(shell pwd)
 GOBIN=$(GOBASE)/bin
 
 build:
-	go build -o $(GOBIN)/$(BINARY_NAME) server/main.go
+	go build -o $(GOBIN)/$(BINARY_NAME) server/cmd/main.go
 
 run:
 	@echo "Running $(BINARY_NAME) on port 50051"
-	go run server/main.go -port 50051
+	go run server/cmd/main.go -port 50051 -address 0.0.0.0
 
 clean:
 	@echo "Cleaning up $(BINARY_NAME)"
 	@rm -rf $(GOBIN)/$(BINARY_NAME)
+	@rm -rf $(GOBASE)/server/chat/*.pb.go
+	@rm -rf $(GOBASE)/server/leftover/*.pb.go
 	@go clean
 
 help:

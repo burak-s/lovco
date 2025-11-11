@@ -6,19 +6,9 @@ import "google/protobuf/timestamp.proto";
 option go_package = "./chat";
 
 service ChatService {
-   // Enters chats sees messages
    rpc JoinChat(JoinChatRequest) returns (stream ChatMessage) {}
-
-   // See queue
    rpc WatchChatQueue(JoinChatRequest) returns (stream QueueResponse) {}
-
-   // Sends message keep seeing messages lively
    rpc SendMessage(ChatMessageRequest) returns (google.protobuf.Empty) {}
-
-   // When enter chat to set message as seen.
-   // rpc MarkMessagesAsSeen(JoinChatRequest) returns (google.protobuf.Empty) {}
-
-   // To close chat session for user. if user owns leftover it deletes messages.
    rpc EndChatSession(EndChatRequest) returns (google.protobuf.Empty) {}
 }
 
